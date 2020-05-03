@@ -57,7 +57,7 @@ Chip8::Chip8() { // Prepare system state before emulation cycles
     // Clear screen
     drawFlag = true;
 
-    srand(time(NULL)); // Seed for opcode
+    srand(time(NULL)); // Seed for random opcode(s)
 }
 
 /* Member Methods */
@@ -65,7 +65,7 @@ Chip8::Chip8() { // Prepare system state before emulation cycles
 // Emulates one cycle: Fetch, Decode, then Execute opcode; update timer afterwards
 void Chip8::emulateCycle() {
     // Fetch 2 byte opcode
-    unsigned short opcode = (memory[pc] << 8) | memory[pc + 1];
+    opcode = (memory[pc] << 8) | memory[pc + 1];
     
     // Decode & execute opcode
     switch (opcode & 0xF000) {
@@ -73,7 +73,7 @@ void Chip8::emulateCycle() {
             switch (opcode & 0x000F) {
                 case 0x0000: // 0x00E0: Clear the screen
                     for (int i = 0; i < 2048; i++) {
-                        screen[i] = 0x0;
+                        screen[i] = 0;
                     }
                     drawFlag = true;
                     pc += 2;
@@ -141,17 +141,17 @@ void Chip8::emulateCycle() {
                     pc += 2;
                 break;
 
-                case 0x0001: // 0x8XY1: Set V[X] to V[X] or V[Y]
+                case 0x0001: // 0x8XY1: Set V[X] to V[X] OR V[Y]
                     V[(opcode & 0x0F00) >> 8] |= V[(opcode & 0x00F0) >> 4];
                     pc += 2;
                 break;
 
-                case 0x0002: // 0x8XY2: Set V[X] to V[X] and V[Y]
+                case 0x0002: // 0x8XY2: Set V[X] to V[X] AND V[Y]
                     V[(opcode & 0x0F00) >> 8] &= V[(opcode & 0x00F0) >> 4];
                     pc += 2;
                 break;
 
-                case 0x0003: // 0x8XY3: Set V[X] to V[X] xor V[Y]
+                case 0x0003: // 0x8XY3: Set V[X] to V[X] XOR V[Y]
                     V[(opcode & 0x0F00) >> 8] ^= V[(opcode & 0x00F0) >> 4];
                     pc += 2;
                 break;
@@ -216,7 +216,135 @@ void Chip8::emulateCycle() {
             pc += 2;
         break;
 
-        case 0xB000:
+        case 0xB000: // 0xBNNN: Jump to address NNN + V[0]
+            pc = (opcode & 0x0FFF) + V[0];
+        break;
+
+        case 0xC000: // 0xCXNN: Set V[X] to the result of a AND on a random number (0-255) and NN
+            V[(opcode & 0x0F00) >> 8] = (rand() & 255) & (opcode & 0x00FF);
+            pc += 2;
+        break;
+
+        case 0xD000: // 0xDXYN: Draw a sprite at coordinate (V[X],V[Y]) that has a width of 8 pixels and height of N pixels
+                     //         Each row of 8 pixels is read as bit-coded starting from memory location I; 
+					 //         I value doesn't change after the execution of this instruction. 
+					 //         V[F] is set to 1 if any screen pixels are flipped from set to unset when the sprite is drawn (collision detection), 
+					 //         and to 0 if that doesn't happen
+            uint8_t x = V[(opcode & 0x0F00) >> 8];
+            uint8_t y = V[(opcode & 0x00F0) >> 4];
+            uint8_t height = opcode & 0xF;
+            uint8_t pixel;
+
+            V[0xF] = 0;
+
+            for (int yLine = 0; yLine < height; yLine++) {
+                pixel = memory[yLine + I];
+                for (int xLine = 0; xLine < 8; xLine++) {
+                    if((pixel & (0x80 >> xLine)) != 0) {
+                        if(screen[(x + xLine + ((y + yLine) * 64)) % (64 * 32)] ^= 1) {
+                            V[0xF] = 1;
+                        } screen[(x + xLine + ((y + yLine) * 64)) % (64 * 32)] ^= 1;
+                    }
+                }
+            }
+
+            drawFlag = true;
+            pc += 2;
+        break;
+
+        case 0xE000:
+            switch(opcode & 0x00FF) {
+                case 0x009E: // 0xEX9E: Skip the next instruction if the key stored in V[X] is pressed
+                    if (key[V[(opcode & 0x0F00) >> 8]] != 0) {
+                        pc += 4;
+                    } else { pc += 2; }
+                break;
+
+                case 0x00A1: // 0xEXA1: Skip the next instruction if the key stored in V[X] isn't pressed
+                    if (key[V[(opcode & 0x0F00) >> 8]] == 0) {
+                        pc += 4;
+                    } else { pc += 2; }
+                break;
+
+                default:
+                    std::cerr << "Unknown opcode [0xE000]: 0x" << std::hex << opcode << std::endl;
+            }                
+        break;
+
+        case 0xF000:
+            switch (opcode & 0x00FF) {
+                case 0x0007: // 0xFX07: Set V[X] to the value of the delay timer
+                    V[(opcode & 0x0F00) >> 8] = delayTimer;
+                    pc += 2;
+                break;
+
+                case 0x000A: // 0xFX0A: A key press is awaited, then stored in V[X]
+                    bool keyPressed = false;
+                    
+                    for (int i = 0; i < 16; i++) {
+                        if (key[i] != 0) {
+                            V[(opcode & 0x0F00) >> 8] = i;
+                            keyPressed = true;
+                        }
+                    }
+
+                    // If key isn't pressed skip current cycle and try again
+                    if(!keyPressed) { return; }
+
+                    pc += 2;
+                break;
+
+                case 0x0015: // 0xFX15: Set delay timer to V[X]
+                    delayTimer = V[(opcode & 0x0F00) >> 8];
+                    pc += 2;
+                break;
+
+                case 0x0018: // 0xFX18: Set sound timer to V[X]
+                    soundTimer = V[(opcode & 0x0F00) >> 8];
+                    pc += 2;
+                break;
+
+                case 0x001E: // 0xFX1E: Adds V[X] to I, V[F] is set to 1 when there is range overflow (I + V[X] > 0xFFF), and 0 if not
+                    if ((I + V[(opcode & 0x0F00) >> 8]) > 0xFFF) {
+                        V[0xF] = 1;
+                    } else { V[0xF] = 0; }
+                    I += V[(opcode & 0x0F00) >> 8];
+                    pc += 2;
+                break;
+
+                case 0x0029: // 0xFX29: Set I to the location of the sprite for the character in V[X], 4x5 font
+                    I = V[(opcode & 0x0F00) >> 8] * 5;
+                    pc += 2;
+                break;
+
+                case 0x0033: // 0xFX33: Store the BCD version of V[X] in memory at I(hundreds), I + 2(middle digit), and I + 3(rightmost digit)
+                    memory[I]     = V[(opcode & 0x0F00) >> 8] / 100;
+                    memory[I + 2] = (V[(opcode & 0x0F00) >> 8] / 10) % 10;
+                    memory[I + 3] = V[(opcode & 0x0F00) >> 8] % 10;
+                    pc += 2;
+                break;
+
+                case 0x0055: // 0xFX55: Store V[0] - V[X] (including V[X]) in memory starting at address I. 
+                             //         The offset from I is increased by 1 for each value written, but I itself is left unmodified.
+                             //         Original CHIP-8 & CHIP-48 increments by X + 1 afterwards
+                    for (int offset = 0; offset <= ((opcode & 0x0F00) >> 8); offset++) {
+                        memory[I + offset] = V[offset];
+                    }
+                    I += ((opcode & 0x0F00) >> 8) + 1;
+                    pc += 2;
+                break;
+
+                case 0x065: // 0xFX65: Load into V[0] - V[X] from memory starting at address I, increment afterwards
+                    for (int offset = 0; offset <= ((opcode & 0x0F00) >> 8); offset++) {
+                        V[offset] = memory[I + offset];
+                    }
+                    I += ((opcode & 0x0F00) >> 8) + 1;
+                    pc += 2;
+                break;
+
+                default:
+                    std::cerr << "Unknown opcode [0xF000]: 0x" << std::hex << opcode << std::endl;
+            }
         break;
 
         default:
@@ -225,5 +353,3 @@ void Chip8::emulateCycle() {
 
     // Update timers
 }
-
-Chip8::~Chip8() {}
