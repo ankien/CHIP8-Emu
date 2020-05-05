@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\chip8.h" />
+    <ClInclude Include="Source\chip8.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\chip8.cpp" />

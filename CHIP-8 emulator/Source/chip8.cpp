@@ -1,6 +1,7 @@
-#include "chip8.h" // CPU implementation
+#include "chip8.hpp" // CPU implementation
 #include <time.h>
 #include <iostream>
+#include <fstream>
 
 Chip8::Chip8() { // Prepare system state before emulation cycles
 
@@ -227,9 +228,9 @@ void Chip8::emulateCycle() {
 
         case 0xD000: // 0xDXYN: Draw a sprite at coordinate (V[X],V[Y]) that has a width of 8 pixels and height of N pixels
                      //         Each row of 8 pixels is read as bit-coded starting from memory location I; 
-					 //         I value doesn't change after the execution of this instruction. 
-					 //         V[F] is set to 1 if any screen pixels are flipped from set to unset when the sprite is drawn (collision detection), 
-					 //         and to 0 if that doesn't happen
+                     //         I value doesn't change after the execution of this instruction. 
+                     //         V[F] is set to 1 if any screen pixels are flipped from set to unset when the sprite is drawn (collision detection), 
+                     //         and to 0 if that doesn't happen
             uint8_t x = V[(opcode & 0x0F00) >> 8];
             uint8_t y = V[(opcode & 0x00F0) >> 4];
             uint8_t height = opcode & 0xF;
@@ -350,6 +351,19 @@ void Chip8::emulateCycle() {
         default:
             std::cout << "Unknown opcode: 0x" << std::hex << opcode << std::endl;
     }
+    if(delayTimer > 0) { delayTimer--; }
+    if(soundTimer > 0) { soundTimer--; }
+}
 
-    // Update timers
+bool Chip8::loadRom(std::string romName) {
+    std::fstream fileStream(romName, std::fstream::binary | std::fstream::in);
+
+    if(!fileStream.is_open) { return false; }
+
+    char byte;
+    for (int i = 0x200; fileStream.get(byte); i++) {
+        if(i >= 4096) { return false; }
+        memory[i] = (uint8_t) byte;
+    }
+    return true;
 }

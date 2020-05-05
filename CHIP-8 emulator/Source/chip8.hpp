@@ -23,30 +23,21 @@ class Chip8 {
     // 0x200 - 0xFFF - Program ROM and work RAM
     uint16_t I, pc;
 
-    uint8_t screen[64 * 32]; // 64 x 32 (2048) pixel res, state array (1 or 0)
-    bool drawFlag; // Need to draw if true
-
     // Two timer registers that count at 60hz, when set they count down to zero
     uint8_t delayTimer;
     uint8_t soundTimer;
-
-    uint8_t key[16]; // Hex based keypad, each key stores a state
 
 public:
     Chip8();
     
     bool loadRom(std::string);
-
-    bool getDrawFlag();
-    void setDrawFlag(bool);
-
-    uint8_t getDisplayValue(int);
-
-    uint8_t setKey(int, uint8_t);
+    
+    uint8_t screen[64 * 32]; // 64 x 32 (2048) pixel res, state array (1 or 0)
+    bool drawFlag; // Need to draw if true
+    
+    uint8_t key[16]; // Hex based keypad, each key stores a state
 
     void emulateCycle(); // Emulates one cycle: Fetch, Decode, then Execute opcode; update timer afterwards
-
-    ~Chip8();
 };
 
 #endif

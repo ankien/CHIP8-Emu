@@ -1,4 +1,4 @@
-#include "chip8.h"
+#include "chip8.hpp"
 #include <iostream>
 #include <SDL.h>
 
