@@ -21,7 +21,7 @@ class Chip8 {
     // 0x000 - 0x1FF - Chip 8 interpreter (contains font set in emu)
     // 0x050 - 0x0A0 - Used for the built in 4x5 pixel font set(0 - F)
     // 0x200 - 0xFFF - Program ROM and work RAM
-    uint16_t I, pc;
+    uint16_t I;
 
     // Two timer registers that count at 60hz, when set they count down to zero
     uint8_t delayTimer;
@@ -31,6 +31,8 @@ public:
     Chip8();
     
     bool loadRom(std::string);
+
+    uint16_t pc;
     
     uint8_t screen[64 * 32]; // 64 x 32 (2048) pixel res, state array (1 or 0)
     bool drawFlag; // Need to draw if true

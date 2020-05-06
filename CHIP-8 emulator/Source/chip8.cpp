@@ -349,10 +349,14 @@ void Chip8::emulateCycle() {
         break;
 
         default:
-            std::cout << "Unknown opcode: 0x" << std::hex << opcode << std::endl;
+            std::cerr << "Unknown opcode: 0x" << std::hex << opcode << std::endl;
     }
     if(delayTimer > 0) { delayTimer--; }
-    if(soundTimer > 0) { soundTimer--; }
+    if(soundTimer > 0) {
+        // Make a beep
+        if(soundTimer == 1) {}
+        soundTimer--;
+    }
 }
 
 bool Chip8::loadRom(std::string romName) {
