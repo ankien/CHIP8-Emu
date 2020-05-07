@@ -18,9 +18,9 @@ Chip8::Chip8() { // Prepare system state before emulation cycles
     for(int i = 0; i < 16; i++) {
         stack[i] = 0;
     }
-    // Clear registers V0-VF
+    // Clear registers V0-VF and keypad
     for (int i = 0; i < 16; i++) {
-        V[i] = 0;
+        key[i] = V[i] = 0;
     }
     // Clear memory
     for (int i = 0; i < 4096; i++) {
@@ -231,6 +231,7 @@ void Chip8::emulateCycle() {
                      //         I value doesn't change after the execution of this instruction. 
                      //         V[F] is set to 1 if any screen pixels are flipped from set to unset when the sprite is drawn (collision detection), 
                      //         and to 0 if that doesn't happen
+        {
             uint8_t x = V[(opcode & 0x0F00) >> 8];
             uint8_t y = V[(opcode & 0x00F0) >> 4];
             uint8_t height = opcode & 0xF;
@@ -242,15 +243,16 @@ void Chip8::emulateCycle() {
                 pixel = memory[yLine + I];
                 for (int xLine = 0; xLine < 8; xLine++) {
                     if((pixel & (0x80 >> xLine)) != 0) {
-                        if(screen[(x + xLine + ((y + yLine) * 64)) % (64 * 32)] ^= 1) {
+                        if(screen[(x + xLine + ((y + yLine) * 64)) % (2048)] ^= 1) {
                             V[0xF] = 1;
-                        } screen[(x + xLine + ((y + yLine) * 64)) % (64 * 32)] ^= 1;
+                        } screen[(x + xLine + ((y + yLine) * 64)) % (2048)] ^= 1;
                     }
                 }
             }
 
             drawFlag = true;
             pc += 2;
+        }
         break;
 
         case 0xE000:
@@ -280,6 +282,7 @@ void Chip8::emulateCycle() {
                 break;
 
                 case 0x000A: // 0xFX0A: A key press is awaited, then stored in V[X]
+                {
                     bool keyPressed = false;
                     
                     for (int i = 0; i < 16; i++) {
@@ -293,6 +296,7 @@ void Chip8::emulateCycle() {
                     if(!keyPressed) { return; }
 
                     pc += 2;
+                }
                 break;
 
                 case 0x0015: // 0xFX15: Set delay timer to V[X]
@@ -360,9 +364,9 @@ void Chip8::emulateCycle() {
 }
 
 bool Chip8::loadRom(std::string romName) {
-    std::fstream fileStream(romName, std::fstream::binary | std::fstream::in);
+    std::fstream fileStream(romName, std::ios::binary | std::ios::in);
 
-    if(!fileStream.is_open) { return false; }
+    if(!fileStream.is_open()) { return false; }
 
     char byte;
     for (int i = 0x200; fileStream.get(byte); i++) {

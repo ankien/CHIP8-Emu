@@ -2,8 +2,7 @@
 #include <iostream>
 #include <SDL.h>
 
-int main(int argc, char *argv[]) {
-    
+int main(int argc, char *argv[]) {  
     if (argc < 2) {
         std::cerr << ("Path to executable and ROM must be given as arguments.\n");
         exit(1);
@@ -18,15 +17,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // Set up SDL
     const int SCREEN_WIDTH = 640;
     const int SCREEN_HEIGHT = 320;
-    if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) != 0) { // Only use audio and sound subsystems
-        std::cerr << "Error in initializing SDL subsystems.\n" << SDL_GetError() << std::endl;
-        SDL_Quit();
-        return 1;
-    }
-
     // Create window
     SDL_Window* window = SDL_CreateWindow(
         "CHIP-8 Emulator",
@@ -34,18 +26,15 @@ int main(int argc, char *argv[]) {
         SDL_WINDOWPOS_UNDEFINED,
         SCREEN_WIDTH,
         SCREEN_HEIGHT,
-        SDL_WINDOW_SHOWN);
-
-    if (window == nullptr) {
-        std::cerr << "Couldn't create window.\n" << SDL_GetError() << std::endl;
-    }
+        SDL_WINDOW_SHOWN
+        );
 
     // Create renderer
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // Create texture from screen buffer
-    SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
+    SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 64, 32);
 
     // Keypad map
     uint8_t keyMap[16]{
@@ -67,10 +56,10 @@ int main(int argc, char *argv[]) {
         SDLK_v
     };
 
-    uint32_t pixels[64 * 32]; // Temporary pixel buffer
-    SDL_Event event;         // Event used to handle keypresses
+    uint32_t pixels[2048]; // Temporary pixel buffer
+    SDL_Event event;       // Event used to handle keypresses
     // Emulation Loop
-    while(chip8.pc < 4096) {
+    while(true) {
         chip8.emulateCycle();
 
         // Event handling //
@@ -109,15 +98,21 @@ int main(int argc, char *argv[]) {
                     pixels[i] = 0xFF000000; // black
                     baseColor -= 8191;      // sky blue gradient
                 } else {
+                    std::cout << "I run!"; // make this shit run
                     pixels[i] = baseColor;
                     baseColor -= 8191;
                 }
             }
 
             // Update texture
-
+            SDL_UpdateTexture(texture, NULL, pixels, 64 * sizeof(uint32_t));
             // Clear screen and renderer
+            SDL_RenderClear(renderer);
+            SDL_RenderCopy(renderer, texture, NULL, NULL);
+            SDL_RenderPresent(renderer);
         }
+
+        SDL_Delay(16); // 1000 ms / 60 instructions per second ~= 16 ms delay
     }
 
     return 0;
