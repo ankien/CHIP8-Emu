@@ -243,7 +243,7 @@ void Chip8::emulateCycle() {
                 pixel = memory[yLine + I];
                 for (int xLine = 0; xLine < 8; xLine++) {
                     if((pixel & (0x80 >> xLine)) != 0) {
-                        if(screen[(x + xLine + ((y + yLine) * 64)) % (2048)] ^= 1) {
+                        if(screen[(x + xLine + ((y + yLine) * 64)) % (2048)] == 1) {
                             V[0xF] = 1;
                         } screen[(x + xLine + ((y + yLine) * 64)) % (2048)] ^= 1;
                     }

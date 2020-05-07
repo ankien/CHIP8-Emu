@@ -98,7 +98,6 @@ int main(int argc, char *argv[]) {
                     pixels[i] = 0xFF000000; // black
                     baseColor -= 8191;      // sky blue gradient
                 } else {
-                    std::cout << "I run!"; // make this shit run
                     pixels[i] = baseColor;
                     baseColor -= 8191;
                 }
@@ -112,7 +111,7 @@ int main(int argc, char *argv[]) {
             SDL_RenderPresent(renderer);
         }
 
-        SDL_Delay(16); // 1000 ms / 60 instructions per second ~= 16 ms delay
+        SDL_Delay(4); // 1000 ms / 60 instructions per second ~= 16 ms delay, but 16 ms delay is really slow so 4
     }
 
     return 0;
