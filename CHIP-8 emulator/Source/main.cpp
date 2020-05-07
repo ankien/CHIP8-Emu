@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // Create texture from screen buffer
-    SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
+    SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // Keypad map
     uint8_t keyMap[16]{
@@ -67,14 +67,58 @@ int main(int argc, char *argv[]) {
         SDLK_v
     };
 
-    SDL_Event event;
+    uint32_t pixels[64 * 32]; // Temporary pixel buffer
+    SDL_Event event;         // Event used to handle keypresses
     // Emulation Loop
-    while (chip8.pc < 4096) {
+    while(chip8.pc < 4096) {
         chip8.emulateCycle();
+
+        // Event handling //
+        while(SDL_PollEvent(&event)) {
+            if(event.type == SDL_QUIT) { return 0; }
+
+            // Process when key is held down
+            if(event.type == SDL_KEYDOWN) {
+                if(event.key.keysym.sym == SDLK_ESCAPE) {
+                    return 0;
+                }
+
+                for(int i = 0; i < 16; i++) {
+                    if(event.key.keysym.sym == keyMap[i]) {
+                        chip8.key[i] = 1;
+                    }
+                }
+            }
+
+            if(event.type == SDL_KEYUP) {
+                for(int i = 0; i < 16; i++) {
+                    if(event.key.keysym.sym == keyMap[i]) {
+                        chip8.key[i] = 0;
+                    }
+                }
+            }
+        }
+        // End of event //
+
+        if (chip8.drawFlag) {
+            chip8.drawFlag = false;
+            uint32_t baseColor = 0xFFFFFFFF; // white
+
+            for (int i = 0; i < 2048; i++) {
+                if (chip8.screen[i] == 0) {
+                    pixels[i] = 0xFF000000; // black
+                    baseColor -= 8191;      // sky blue gradient
+                } else {
+                    pixels[i] = baseColor;
+                    baseColor -= 8191;
+                }
+            }
+
+            // Update texture
+
+            // Clear screen and renderer
+        }
     }
 
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
     return 0;
 }
