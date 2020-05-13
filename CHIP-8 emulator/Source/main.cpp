@@ -1,6 +1,5 @@
 #include "chip8.hpp"
 #include <iostream>
-#include <SDL.h>
 
 int main(int argc, char *argv[]) {  
     if (argc < 2) {
@@ -12,13 +11,10 @@ int main(int argc, char *argv[]) {
     Chip8 chip8;
 
     // Load game
-    if(!chip8.loadRom(argv[1])) { 
-        std::cerr << "ROM not given as an argument.\n";
-        return 1;
-    }
+    chip8.loadRom(argv[1]);
 
-    const int SCREEN_WIDTH = 640;
-    const int SCREEN_HEIGHT = 320;
+    const int SCREEN_WIDTH = 1280;
+    const int SCREEN_HEIGHT = 640;
     // Create window
     SDL_Window* window = SDL_CreateWindow(
         "CHIP-8 Emulator",
@@ -36,23 +32,23 @@ int main(int argc, char *argv[]) {
     // Create texture from screen buffer
     SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 64, 32);
 
-    // Keypad map
-    uint8_t keyMap[16]{
+    // Keypad map, need to fix controls
+    uint8_t keyMap[16]{ // keypad is mapped in order [0-F]
+        SDLK_x,
         SDLK_1,
         SDLK_2,
         SDLK_3,
-        SDLK_4,
         SDLK_q,
         SDLK_w,
         SDLK_e,
-        SDLK_r,
         SDLK_a,
         SDLK_s,
         SDLK_d,
-        SDLK_f,
-        SDLK_z,
-        SDLK_x,
+        SDLK_a,
         SDLK_c,
+        SDLK_4,
+        SDLK_r,
+        SDLK_f,
         SDLK_v
     };
 
@@ -96,7 +92,7 @@ int main(int argc, char *argv[]) {
             for (int i = 0; i < 2048; i++) {
                 if (chip8.screen[i] == 0) {
                     pixels[i] = 0xFF000000; // black
-                    baseColor -= 8191;      // sky blue gradient
+                    baseColor -= 8191;      // gradient effect
                 } else {
                     pixels[i] = baseColor;
                     baseColor -= 8191;
@@ -110,8 +106,8 @@ int main(int argc, char *argv[]) {
             SDL_RenderCopy(renderer, texture, NULL, NULL);
             SDL_RenderPresent(renderer);
         }
-
-        SDL_Delay(4); // 1000 ms / 60 instructions per second ~= 16 ms delay, but 16 ms delay is really slow so 4
+        
+        SDL_Delay(2); // 1000 ms / 60 instructions per second ~= 16 ms delay, but 16 is really slow
     }
 
     return 0;

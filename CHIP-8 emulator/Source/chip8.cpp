@@ -2,15 +2,39 @@
 #include <time.h>
 #include <iostream>
 #include <fstream>
+#include <math.h>
+
+// Initialize SDL audio
+uint16_t audioBuffer[20480]; // buffer size in bytes
+SDL_AudioDeviceID audioDevice;
+SDL_AudioSpec audioSpec;
 
 Chip8::Chip8() { // Prepare system state before emulation cycles
+    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+        std::cerr << "Couldn't init audio! Continuing..." << std::endl;
+    }
+    audioSpec.freq = 44100; // 44.1 khz sample rate
+    audioSpec.format = AUDIO_S16SYS;
+    audioSpec.channels = 1;
+    audioSpec.samples = 2048;
+    audioSpec.callback = NULL;
+
+    audioDevice = SDL_OpenAudioDevice(NULL, 0, &audioSpec, NULL, 0);
+
+    float x = 0;
+    for(int i = 0; i < 20480; ++i, x += 0.001) {
+        audioBuffer[i] = sin(x) * 20000; // amplitude
+    }
+
+    SDL_PauseAudioDevice(audioDevice, 0); // start audio
+
 
     pc     = 0x200;  // Program counter starts at 0x200
     opcode = 0;      // Reset current opcode	
     I      = 0;      // Reset index register
     sp     = 0;      // Reset stack pointer
     
-    // Clear display
+    // Clear display memory
     for(int i = 0; i < 2048; i++) {
         screen[i] = 0;
     }
@@ -69,7 +93,7 @@ void Chip8::emulateCycle() {
     opcode = (memory[pc] << 8) | memory[pc + 1];
     
     // Decode & execute opcode
-    switch (opcode & 0xF000) {
+    switch (opcode & 0xF000) { // huge ass switch-case may not be the most efficient interpreter method
         case 0x0000:
             switch (opcode & 0x000F) {
                 case 0x0000: // 0x00E0: Clear the screen
@@ -355,10 +379,14 @@ void Chip8::emulateCycle() {
         default:
             std::cerr << "Unknown opcode: 0x" << std::hex << opcode << std::endl;
     }
-    if(delayTimer > 0) { delayTimer--; }
+    if(delayTimer > 0) { 
+        delayTimer--;
+
+    }
     if(soundTimer > 0) {
-        // Make a beep
-        if(soundTimer == 1) {}
+        if (soundTimer == 1) {
+            SDL_QueueAudio(audioDevice, audioBuffer, soundTimer * 20480);
+        }
         soundTimer--;
     }
 }

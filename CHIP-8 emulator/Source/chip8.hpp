@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <string>
+#include <SDL.h>
 
 class Chip8 {
     uint8_t  memory[4096]; // 4096 bytes of memory
@@ -35,7 +36,7 @@ public:
 
     uint16_t pc;
     
-    uint8_t screen[2048]; // 64 x 32 (2048) pixel res, state array (1 or 0)
+    uint8_t screen[2048]; // 64 x 32 (2048) pixel res, state array for display memory (1 or 0)
     bool drawFlag; // Need to draw if true
     
     uint8_t key[16]; // Hex based keypad, each key stores a state
