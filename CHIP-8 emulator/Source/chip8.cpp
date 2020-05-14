@@ -100,7 +100,7 @@ void Chip8::emulateCycle() {
                     for (int i = 0; i < 2048; i++) {
                         screen[i] = 0;
                     }
-                    drawFlag = true;
+                    drawFlag = false;
                     pc += 2;
                 break;
                     
@@ -117,6 +117,7 @@ void Chip8::emulateCycle() {
 
         case 0x1000: // 0x1NNN: Jump to address NNN
             pc = opcode & 0x0FFF;
+            drawFlag = true;
         break;
 
         case 0x2000: // 0x2NNN: Call subroutine at NNN
@@ -259,14 +260,14 @@ void Chip8::emulateCycle() {
             uint8_t x = V[(opcode & 0x0F00) >> 8];
             uint8_t y = V[(opcode & 0x00F0) >> 4];
             uint8_t height = opcode & 0xF;
-            uint8_t pixel;
-
+            uint8_t spriteRow;
+            
             V[0xF] = 0;
 
-            for (int yLine = 0; yLine < height; yLine++) {
-                pixel = memory[yLine + I];
+            for(int yLine = 0; yLine < height; yLine++) {
+                spriteRow = memory[I + yLine];
                 for (int xLine = 0; xLine < 8; xLine++) {
-                    if((pixel & (0x80 >> xLine)) != 0) {
+                    if((spriteRow & (0x80 >> xLine)) != 0) {
                         if(screen[(x + xLine + ((y + yLine) * 64)) % (2048)] == 1) {
                             V[0xF] = 1;
                         } screen[(x + xLine + ((y + yLine) * 64)) % (2048)] ^= 1;
@@ -274,7 +275,6 @@ void Chip8::emulateCycle() {
                 }
             }
 
-            drawFlag = true;
             pc += 2;
         }
         break;
@@ -346,10 +346,10 @@ void Chip8::emulateCycle() {
                     pc += 2;
                 break;
 
-                case 0x0033: // 0xFX33: Store the BCD version of V[X] in memory at I(hundreds), I + 2(middle digit), and I + 3(rightmost digit)
+                case 0x0033: // 0xFX33: Store the BCD version of V[X] in memory at I(hundreds), I + 1(middle digit), and I + 2(rightmost digit)
                     memory[I]     = V[(opcode & 0x0F00) >> 8] / 100;
-                    memory[I + 2] = (V[(opcode & 0x0F00) >> 8] / 10) % 10;
-                    memory[I + 3] = V[(opcode & 0x0F00) >> 8] % 10;
+                    memory[I + 1] = (V[(opcode & 0x0F00) >> 8] / 10) % 10;
+                    memory[I + 2] = V[(opcode & 0x0F00) >> 8] % 10;
                     pc += 2;
                 break;
 
