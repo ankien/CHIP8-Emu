@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <SDL.h>
+#include <iostream>
 
 class Chip8 {
     uint8_t  memory[4096]; // 4096 bytes of memory
@@ -31,7 +32,7 @@ class Chip8 {
 
 public:
     Chip8();
-    
+
     bool loadRom(std::string);
 
     uint16_t pc;

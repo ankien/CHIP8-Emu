@@ -32,7 +32,6 @@ int main(int argc, char *argv[]) {
     // Create texture from screen buffer
     SDL_Texture* texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 64, 32);
 
-    // Keypad map, need to fix controls
     uint8_t keyMap[16]{ // keypad is mapped in order [0-F]
         SDLK_x,
         SDLK_1,

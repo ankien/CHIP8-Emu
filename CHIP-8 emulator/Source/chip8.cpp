@@ -100,7 +100,7 @@ void Chip8::emulateCycle() {
                     for (int i = 0; i < 2048; i++) {
                         screen[i] = 0;
                     }
-                    drawFlag = false;
+                    drawFlag = true;
                     pc += 2;
                 break;
                     
@@ -268,9 +268,9 @@ void Chip8::emulateCycle() {
                 spriteRow = memory[I + yLine];
                 for (int xLine = 0; xLine < 8; xLine++) {
                     if((spriteRow & (0x80 >> xLine)) != 0) {
-                        if(screen[(x + xLine + ((y + yLine) * 64)) % (2048)] == 1) {
+                        if(screen[(x + xLine + ((y + yLine) * 64)) % 2048] == 1) {
                             V[0xF] = 1;
-                        } screen[(x + xLine + ((y + yLine) * 64)) % (2048)] ^= 1;
+                        } screen[(x + xLine + ((y + yLine) * 64)) % 2048] ^= 1;
                     }
                 }
             }
@@ -381,7 +381,6 @@ void Chip8::emulateCycle() {
     }
     if(delayTimer > 0) { 
         delayTimer--;
-
     }
     if(soundTimer > 0) {
         if (soundTimer == 1) {
