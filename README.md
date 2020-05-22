@@ -1,3 +1,3 @@
 # CHIP8-Emu
 Click for video:
-[![Game Image](https://doctard.s-ul.eu/v0I9lTnb)](https://u.teknik.io/CCdak.mp4)
+[![Game Image](https://doctard.s-ul.eu/v0I9lTnb)](https://doctard.s-ul.eu/5QPAKyQK)
